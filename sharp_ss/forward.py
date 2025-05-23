@@ -80,7 +80,7 @@ def align_D(D_model, D, align):
     Args:
         D_model: (n,) array, model data trace
         D: (n, m) array, where n is the number of sample points and m is the number of traces
-        prior: object containing alignment parameters like 'align' and 'dt'
+        align: max shift in sample points; note that prior.align is in seconds (should be divided by prior.dt when passing in)
     
     Returns:
         D_model_aligned: (n,) or (n, m) array, aligned model data trace

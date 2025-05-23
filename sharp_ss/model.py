@@ -11,7 +11,7 @@ class Bookkeeping:
 
     def __post_init__(self):
         if self.burnInSteps is None:
-            self.burnInSteps = self.totalSteps // 2
+            self.burnInSteps = int(self.totalSteps // 2)
 
 @dataclass
 class Prior:
@@ -32,6 +32,7 @@ class Prior:
     nc2Std: float = None
 
     negOnly: bool = False
+    align: bool = False
 
 @dataclass
 class Model:
@@ -50,7 +51,7 @@ class Model:
             loc=np.array([]),
             amp=np.array([]),
             wid=np.array([]),
-            sig=Prior.stdP,
+            sig=prior.stdP,
             nc1=nc1,
             nc2=nc2
         )
