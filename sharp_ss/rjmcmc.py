@@ -3,17 +3,59 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sharp_ss.utils import generate_arr
 from sharp_ss.model import Model, Prior
-from sharp_ss.forward import create_G_from_model, calc_like_prob
+from sharp_ss.forward import create_G_from_model, convolve_P_G, align_D
+
+def calc_like_prob(P, D, model, prior, sigma=None):
+    """
+    Calculate likelihood probability and associated matrices.
+    
+    Args:
+        P: (n,) array
+        D: (n, m) array, where n is the number of sample points and m is the number of traces
+        model: object with model parameters
+        prior: object with prior settings
+        
+    Returns:
+        logL
+    """
+    if sigma is None: sigma = prior.stdP
+
+    # Forward calculation: D = P * G
+    G = create_G_from_model(model, prior)
+    D_model = convolve_P_G(P, G)
+
+    # Align to max amplitude if preferred (determined by prior.align - send in sample points)
+    if prior.align:
+        D_model, D = align_D(D_model, D, prior.align/prior.dt)
+
+    if D.ndim == 1:
+        D = D[:, np.newaxis]  # (npts, 1)
+    if D_model.ndim == 1:
+        D_model = D_model[:, np.newaxis]  # (npts, 1)
+
+    # Calculate Diff without expanding D_model
+    Diff = (D_model - D)  # (npts, ntraces)
+
+    # Only take negative side if negOnly
+    if prior.negOnly:
+        Diff = Diff[:len(Diff) // 2, :]
+    
+    # Compute log likelihood
+    logL = -0.5 * np.sum((Diff / sigma) ** 2)
+
+    return logL
 
 def birth(model, prior):
     model_new = copy.deepcopy(model)
     if model_new.Nphase < prior.maxN:
         model_new.Nphase += 1
-        model_new.loc = np.append(
-            model_new.loc, generate_arr(np.array([prior.minSpace, prior.tlen]), model_new.loc, prior.minSpace)
-        )
+        new_loc, new_wid = generate_arr(
+                np.array([prior.minSpace, prior.tlen]), model_new.loc, model_new.wid, prior.minSpace, prior.widRange
+                )
+        model_new.loc = np.append(model_new.loc, new_loc)
+        model_new.wid = np.append(model_new.wid, new_wid)
         model_new.amp = np.append(model_new.amp, np.random.uniform(prior.ampRange[0], prior.ampRange[1]))
-        model_new.wid = np.append(model_new.wid, np.random.uniform(prior.widRange[0], prior.widRange[1]))
+        success = True
     else:
         success = False
     return model_new, success
@@ -21,8 +63,8 @@ def birth(model, prior):
 def death(model, prior):
     model_new = copy.deepcopy(model)
     if model_new.Nphase > 0:
-        model_new.Nphase -= 1
         idx = np.random.randint(model_new.Nphase)
+        model_new.Nphase -= 1
         model_new.loc = np.delete(model_new.loc, idx)
         model_new.amp = np.delete(model_new.amp, idx)
         model_new.wid = np.delete(model_new.wid, idx)
@@ -37,17 +79,24 @@ def update_loc(model, prior):
         return birth(model, prior)
     # Copy model
     model_new = copy.deepcopy(model)
-    # Select a phase and update
+    # Select a phase to update
     idx = np.random.randint(model_new.Nphase)
+    # Propose a new location
     model_new.loc[idx] += prior.locStd * np.random.randn()
-    # Check range
+    # Check if new location is in allowed range
     if not (prior.minSpace <= model_new.loc[idx] <= prior.tlen):
         return model, False
-    # Check spacing with other phases
+    # Get other locations and widths
     loc_others = np.delete(model_new.loc, idx)
-    if np.any(np.abs(loc_others - model_new.loc[idx]) < prior.minSpace):
+    wid_others = np.delete(model_new.wid, idx)
+    loc_new = model_new.loc[idx]
+    wid_new = model_new.wid[idx]
+    # Check for spacing and overlap with other phases
+    dist = np.abs(loc_others - loc_new)
+    min_dists = np.maximum(prior.minSpace, (wid_others + wid_new) / 2)
+    if np.any(dist < min_dists):
         return model, False
-    # Success, return
+    # Success
     return model_new, True
 
 def update_amp(model, prior):
@@ -71,13 +120,24 @@ def update_wid(model, prior):
         return birth(model, prior)
     # Copy model
     model_new = copy.deepcopy(model)
-    # Select a phase and update
+    # Select a phase to update
     idx = np.random.randint(model_new.Nphase)
+    # Propose a new width
     model_new.wid[idx] += prior.widStd * np.random.randn()
-    # Check range
-    if not (prior.widRange[0] <= model_new.loc[idx] <= prior.widRange[1]):
+    # Check if new width is within allowed range
+    wid_new = model_new.wid[idx]
+    if not (prior.widRange[0] <= wid_new <= prior.widRange[1]):
         return model, False
-    # Success, return
+    # Check overlap with other phases
+    loc_new = model_new.loc[idx]
+    loc_others = np.delete(model_new.loc, idx)
+    wid_others = np.delete(model_new.wid, idx)
+    if loc_others.size > 0:
+        dist = np.abs(loc_others - loc_new)
+        overlap_thresh = (wid_others + wid_new) / 2
+        if np.any(dist < np.maximum(prior.minSpace, overlap_thresh)):
+            return model, False
+    # Success
     return model_new, True
 
 def update_sig(model, prior):
@@ -100,21 +160,6 @@ def update_nc(model, prior):
     # Return
     return model_new, True
 
-def choose_actions(actionsPerStep, fitNoise, ncProb=0.025):
-    
-    actionPool = [0, 1, 2, 3, 4]
-    if fitNoise: actionPool.extend([5, 6])
-    actionPool = np.array(actionPool)
-
-    if 6 in actionPool:
-        base_actions = actionPool[actionPool != 6]
-        base_weight = (1-ncProb) / len(base_actions)
-        weights = np.array([ncProb if a == 5 else base_weight for a in actionPool])
-    else:
-        weights = np.full(len(actionPool), 1.0 / len(actionPool))
-
-    return np.random.choice(actionPool, size=actionsPerStep, replace=True, p=weights)
-
 def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
     
     totalSteps = bookkeeping.totalSteps
@@ -122,17 +167,12 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
     nSaveModels = bookkeeping.nSaveModels
     save_interval = (totalSteps - burnInSteps) // nSaveModels
     actionsPerStep = bookkeeping.actionsPerStep
-    fitNoise = bookkeeping.fitNoise
 
     # Start from an empty model
     model = Model.create_empty(prior=prior)
-    changed_corr = True  # need to compute correlation matrix at first step
-    R_LT = R_UT = R_P = LogDetR = None
 
     # Initial likelihood
-    logL, R_LT, R_UT, R_P, LogDetR = calc_like_prob(
-        P, D, model, prior, CdInv_opt=True
-    )
+    logL = calc_like_prob(P, D, model, prior)
 
     start_time = time.time()
     checkpoint_interval = totalSteps // 100
@@ -142,10 +182,8 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
 
     for iStep in range(totalSteps):
 
-        actions = choose_actions(fitNoise, actionsPerStep)
+        actions = np.random.choice(5, size=actionsPerStep)
         model_new = model
-
-        changed_corr = False
 
         for action in actions:
             if action == 0:
@@ -158,24 +196,9 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
                 model_new, _ = update_amp(model_new, prior)
             elif action == 4:
                 model_new, _ = update_wid(model_new, prior)
-            elif action == 5:
-                model_new, _ = update_sig(model_new, prior)
-            elif action == 6:
-                model_new, nc_success = update_nc(model_new, prior)
-        
-        changed_corr &= nc_success
-
-        # Forward model
-        G_new = create_G_from_model(model_new, prior)
 
         # Compute likelihood
-        if changed_corr:
-            new_logL, new_R_LT, new_R_UT, new_R_P, new_LogDetR = \
-                calc_like_prob(P, D, G_new, model_new, prior, CdInv_opt=True)
-        else:
-            new_logL, _, _, _, _ = \
-                calc_like_prob(P, D, G_new, model_new, prior, CdInv_opt=False,
-                               R_LT=R_LT, R_UT=R_UT, R_P=R_P, LogDetR=LogDetR)
+        new_logL = calc_like_prob(P, D, model_new, prior)
 
         # Acceptance probability
         log_accept_ratio = new_logL - logL
@@ -183,8 +206,6 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
         if np.log(np.random.rand()) < log_accept_ratio:
             model = model_new
             logL = new_logL
-            if changed_corr:
-                R_LT, R_UT, R_P, LogDetR = new_R_LT, new_R_UT, new_R_P, new_LogDetR
         
         logL_trace.append(logL)
 
@@ -209,8 +230,4 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
             with open(os.path.join(saveDir, "progress_log.txt"), "a") as f:
                 f.write(f"[{now}] Step {iStep+1}/{totalSteps}, Elapsed: {elapsed:.2f} sec\n")
 
-        changed_corr = False  # reset after each iteration
-
     return ensemble, logL_trace
-
-    

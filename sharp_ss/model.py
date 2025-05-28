@@ -3,7 +3,7 @@ import numpy as np
 
 @dataclass
 class Bookkeeping:
-    totalSteps:     int = 1e6
+    totalSteps:     int = int(1e6)
     burnInSteps:    int = None
     nSaveModels:    int = 100
     actionsPerStep: int = 2
@@ -33,6 +33,12 @@ class Prior:
 
     negOnly: bool = False
     align: bool = False
+
+    def __post_init__(self):
+        if self.ampStd is None:
+            self.ampStd = 0.2 * (self.ampRange[1] - self.ampRange[0])
+        if self.widStd is None:
+            self.widStd = 0.2 * (self.widRange[1] - self.widRange[0])
 
 @dataclass
 class Model:

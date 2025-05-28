@@ -33,11 +33,14 @@ def create_G_from_model(model: Model, prior: Prior):
         gauss = amp * windows.gaussian(wid, std=wid/6)
 
         # Insert the Gaussian
-        start_idx = int(tlen_sp+loc-wid/2)
-        G[start_idx:start_idx+wid] = gauss
-        start_idx_neg = int(tlen_sp-loc-wid/2)
-        G[start_idx_neg:start_idx_neg+wid] = -gauss
-
+        try:
+            start_idx = int(tlen_sp+loc-wid/2)
+            G[start_idx:start_idx+wid] = gauss
+            start_idx_neg = int(tlen_sp-loc-wid/2)
+            G[start_idx_neg:start_idx_neg+wid] = -gauss
+        except:
+            pass
+        
     return G
 
 def convolve_P_G(P, G):
@@ -108,75 +111,3 @@ def align_D(D_model, D, align):
     D_aligned = D[midind - cut_pts : midind + cut_pts + 1, :]
     
     return D_model_aligned, D_aligned
-
-
-def calc_like_prob(P, D, model, prior, CdInv_opt, R_LT=None, R_UT=None, R_P=None, LogDetR=None):
-    """
-    Calculate likelihood probability and associated matrices.
-    
-    Args:
-        P: (n,) array
-        D: (n, m) array, where n is the number of sample points and m is the number of traces
-        model: object with model parameters
-        prior: object with prior settings
-        CdInv_opt: bool, whether to build CdInv
-        R_LT, R_UT, R_P, LogDetR: optional, for efficiency
-        
-    Returns:
-        logL, D_model, R_LT, R_UT, R_P, LogDetR
-    """
-
-    from scipy.linalg import toeplitz, lu, cholesky, solve_triangular
-    
-    # Forward calculation: D = P * G
-    G = create_G_from_model(model, prior)
-    D_model = convolve_P_G(P, G)
-
-    # Align to max amplitude if preferred (determined by prior.align - send in sample points)
-    if prior.align:
-        D_model, D = align_D(D_model, D, prior.align/prior.dt)
-
-    if CdInv_opt:
-        Rrow = np.zeros(len(D))
-        if prior.negOnly:
-            Rrow = Rrow[:len(Rrow) // 2]
-
-        for i in range(len(Rrow)):
-            t = (i) * prior.dt
-            Rrow[i] = np.exp(-model.nc1 * t) * np.cos(model.nc2 * np.pi * model.nc1 * t)
-        
-        R = toeplitz(Rrow)
-        
-        # Cholesky for logdet
-        L = cholesky(R, lower=True)
-        LogDetR = 2 * np.sum(np.log(np.diag(L)))
-
-        # LU decomposition
-        R_P, R_LT, R_UT = lu(R)
-
-    if D.ndim == 1:
-        D = D[:, np.newaxis]  # (npts, 1)
-    if D_model.ndim == 1:
-        D_model = D_model[:, np.newaxis]  # (npts, 1)
-
-    # Calculate Diff without expanding D_model
-    Diff = (D_model - D)  # (npts, ntraces)
-
-    if prior.negOnly:
-        Diff = Diff[:len(Diff) // 2, :]
-
-    # Solve triangular systems
-    y = solve_triangular(R_LT, R_P @ Diff, lower=True)
-    y = solve_triangular(R_UT, y, lower=False)
-
-    # Mahalanobis distance per trace
-    MahalDist = np.sum(Diff * y, axis=0) / (model.sig**2)
-
-    # Log determinant
-    LogCdDeterm = Diff.shape[0] * np.log(model.sig) + 0.5 * LogDetR
-
-    # Total logL
-    logL = np.sum(-LogCdDeterm - MahalDist / 2)
-
-
-    return logL, R_LT, R_UT, R_P, LogDetR
