@@ -2,7 +2,7 @@ import copy, time, os, datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from sharp_ss.utils import generate_arr
-from sharp_ss.model import Model, Prior
+from sharp_ss.model import Model, Model2
 from sharp_ss.forward import create_G_from_model, convolve_P_G, align_D
 
 def calc_like_prob(P, D, model, prior, sigma=None):
@@ -109,7 +109,7 @@ def update_amp(model, prior):
     idx = np.random.randint(model_new.Nphase)
     model_new.amp[idx] += prior.ampStd * np.random.randn()
     # Check range
-    if not (prior.ampRange[0] <= model_new.loc[idx] <= prior.ampRange[1]):
+    if not (prior.ampRange[0] <= model_new.amp[idx] <= prior.ampRange[1]):
         return model, False
     # Success, return
     return model_new, True
