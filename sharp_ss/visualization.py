@@ -95,6 +95,38 @@ def plot_rjmcmc_results(base_dir, num_chains=1, ensemble_filename="ensemble.pkl"
     plt.tight_layout()
     plt.show()
 
+def plot_rho_distribution(ax, ensemble, tlim, bins=(100, 100)):
+    """
+    Visualize rho distribution across ensemble using locPP vs rho.
+
+    Args:
+        ax: matplotlib Axes object to plot on
+        ensemble: list of Model2 objects
+        bins: tuple of (xbins, ybins) for 2D histogram
+    """
+    loc_all = []
+    rho_all = []
+
+    for model in ensemble:
+        if model.Nphase == 0:
+            continue
+        loc_all.extend(model.locPP)
+        rho_all.extend(model.rho)
+
+    loc_all = np.array(loc_all)
+    rho_all = np.array(rho_all)
+
+    # 2D histogram
+    h = ax.hist2d(loc_all, rho_all, bins=bins, cmap='hot')
+
+    # # Colorbar
+    # cbar = ax.figure.colorbar(h[3], ax=ax, label="Count")
+
+    # Labels
+    ax.set_xlabel("locPP (s)")
+    ax.set_ylabel("ρ (rho)")
+    ax.set_title("Ensemble Distribution of ρ vs locPP")
+    ax.set_xlim(tlim)
 
 def plot_rjmcmc_results_PP_SS_mars(
     base_dir,
@@ -171,7 +203,7 @@ def plot_rjmcmc_results_PP_SS_mars(
     D_SS_mean = np.mean(D_SS_array, axis=0)
 
     # --- Plotting ---
-    fig, axs = plt.subplots(4, 1, figsize=(12, 12), sharex=False)
+    fig, axs = plt.subplots(4, 1, figsize=(8, 12), sharex=False)
 
     # 1. G_PP as 2D histogram
     plot_G_2dhist(axs[0], G_PP_array, time, "PP: Ensemble of G Models (2D Histogram)")
@@ -185,10 +217,13 @@ def plot_rjmcmc_results_PP_SS_mars(
     axs[1].grid(True)
     axs[1].legend()
 
-    # 3. G_SS as 2D histogram
+    # # 3. Rho distribution vs. locPP
+    # plot_rho_distribution(axs[2], ensemble_all, [time[0], time[-1]])
+
+    # 4. G_SS as 2D histogram
     plot_G_2dhist(axs[2], G_SS_array, time, "SS: Ensemble of G Models (2D Histogram)")
 
-    # 4. D_SS predictions
+    # 5. D_SS predictions
     axs[3].set_title("SS: Predicted D vs Observed D")
     axs[3].plot(time_PD_SS, D_SS_array.T, color="gray", alpha=0.2, linewidth=0.8)
     axs[3].plot(time_PD_SS, D_SS_mean, color="black", linewidth=1.5, label="Predicted Mean")
