@@ -5,7 +5,7 @@ from sharp_ss.utils import generate_arr_PP_SS_mars
 from sharp_ss.model import Model, Model2
 from sharp_ss.forward import create_G_from_model, convolve_P_G, align_D
 
-def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None):
+def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None, CDinv_PP=None, CDinv_SS=None):
     """
     Calculate likelihood probability using both PP and SS with an assumed vp/vs value.
     
@@ -55,14 +55,19 @@ def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None):
         D_SS_model = D_SS_model[:, np.newaxis]  # (npts, 1)
 
     # Calculate Diff
-    Diff = (D_PP_model - D_PP) + (D_SS_model - D_SS)
+    Diff_PP = D_PP_model - D_PP
+    Diff_SS = D_SS_model - D_SS
 
     # Only take negative side if negOnly
     if prior.negOnly:
-        Diff = Diff[:len(Diff) // 2, :]
+        Diff_PP = Diff_PP[:len(Diff_PP) // 2, :]
+        Diff_SS = Diff_SS[:len(Diff_SS) // 2, :]
     
     # Compute log likelihood
-    logL = -0.5 * np.sum((Diff / sigma) ** 2)
+    if CDinv_PP is None or CDinv_SS is None:
+        logL = -0.5 * np.sum(((Diff_PP + Diff_SS) / sigma) ** 2)
+    else:
+        logL = -0.5 * (np.trace(Diff_PP.T @ CDinv_PP @ Diff_PP) + np.trace(Diff_SS.T @ CDinv_SS @ Diff_SS))
 
     return logL
 
@@ -229,7 +234,7 @@ def update_rho(model, prior):
     # Success, return
     return model_new, True
 
-def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir):
+def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, CDinv_PP=None, CDinv_SS=None):
     
     totalSteps = bookkeeping.totalSteps
     burnInSteps = bookkeeping.burnInSteps
@@ -241,7 +246,9 @@ def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir):
     model = Model2.create_empty()
 
     # Initial likelihood
-    logL = calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior)
+    logL = calc_like_prob_PP_SS_mars(
+        P_PP, P_SS, D_PP, D_SS, model, prior, CDinv_PP=CDinv_PP, CDinv_SS=CDinv_SS
+        )
 
     start_time = time.time()
     checkpoint_interval = totalSteps // 100
@@ -273,7 +280,9 @@ def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir):
                 model_new, _ = update_rho(model_new, prior)
 
         # Compute likelihood
-        new_logL = calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model_new, prior)
+        new_logL = calc_like_prob_PP_SS_mars(
+            P_PP, P_SS, D_PP, D_SS, model_new, prior, CDinv_PP=CDinv_PP, CDinv_SS=CDinv_SS
+            )
 
         # Acceptance probability
         log_accept_ratio = new_logL - logL

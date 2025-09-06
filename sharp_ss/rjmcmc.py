@@ -5,7 +5,7 @@ from sharp_ss.utils import generate_arr
 from sharp_ss.model import Model, Model2
 from sharp_ss.forward import create_G_from_model, convolve_P_G, align_D
 
-def calc_like_prob(P, D, model, prior, sigma=None):
+def calc_like_prob(P, D, model, prior, sigma=None, CDinv=None):
     """
     Calculate likelihood probability and associated matrices.
     
@@ -41,7 +41,10 @@ def calc_like_prob(P, D, model, prior, sigma=None):
         Diff = Diff[:len(Diff) // 2, :]
     
     # Compute log likelihood
-    logL = -0.5 * np.sum((Diff / sigma) ** 2)
+    if CDinv is None:
+        logL = -0.5 * np.sum((Diff / sigma) ** 2)
+    else:
+        logL = -0.5 * np.trace(Diff.T @ CDinv @ Diff)
 
     return logL
 
@@ -160,7 +163,7 @@ def update_nc(model, prior):
     # Return
     return model_new, True
 
-def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
+def rjmcmc_run(P, D, prior, bookkeeping, saveDir, CDinv=None):
     
     totalSteps = bookkeeping.totalSteps
     burnInSteps = bookkeeping.burnInSteps
@@ -172,7 +175,7 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
     model = Model.create_empty(prior=prior)
 
     # Initial likelihood
-    logL = calc_like_prob(P, D, model, prior)
+    logL = calc_like_prob(P, D, model, prior, CDinv=CDinv)
 
     start_time = time.time()
     checkpoint_interval = totalSteps // 100
@@ -198,7 +201,7 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
                 model_new, _ = update_wid(model_new, prior)
 
         # Compute likelihood
-        new_logL = calc_like_prob(P, D, model_new, prior)
+        new_logL = calc_like_prob(P, D, model_new, prior, CDinv=CDinv)
 
         # Acceptance probability
         log_accept_ratio = new_logL - logL
@@ -229,5 +232,9 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir):
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with open(os.path.join(saveDir, "progress_log.txt"), "a") as f:
                 f.write(f"[{now}] Step {iStep+1}/{totalSteps}, Elapsed: {elapsed:.2f} sec\n")
+
+    # Save final log-likelihood trace
+    logL_file = os.path.join(saveDir, "logL.txt")
+    np.savetxt(logL_file, logL_trace, fmt="%.8f")
 
     return ensemble, logL_trace

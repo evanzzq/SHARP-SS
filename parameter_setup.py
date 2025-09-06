@@ -2,26 +2,31 @@
 # filedir = "H:\My Drive\Research\SharpSSPy"
 filedir = "/Users/evanzhang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
 
-event_name = "S0976a_src_6s"
-data_type = "joint" # "PP", "SS", "joint", "syn"
+event_name = "S1000a"
+data_type = "PP" # "PP", "SS", "joint", "syn", "synDL"
+useCD = True
 
 PPdir = event_name+"_PP"
 SSdir = event_name+"_SS"
-syndir = event_name+"_syn"
+syndir = event_name
+
+# For "synDL" type only
+Pfile = "misc/ocean_stack.csv" # relative to filedir
+DLmod = [16, 8, 5, 5] # patch size (l1/l2), patch size (s1/s2), no. of layer, epochs
 
 modname = event_name+"_"+data_type
-runname = "run1"
+runname = "run2"
 
-ampRange = (-0.3, 0.)
+ampRange = (-0.5, 0.5)
 widRange = (0.1, 2.)
 negOnly = True
-align = 3.
-maxN = 2
+align = False
+maxN = 5
 stdP = 0.1
 
-totalSteps     = int(4e5)
-burnInSteps    = None
+totalSteps     = int(2e5)
+burnInSteps    = int(1.5e5)
 nSaveModels    = 100
 actionsPerStep = 2
 
-num_chains = 16
+num_chains = 1

@@ -7,7 +7,6 @@ class Bookkeeping:
     burnInSteps:    int = None
     nSaveModels:    int = 100
     actionsPerStep: int = 2
-    fitNoise:       bool = False
 
     def __post_init__(self):
         if self.burnInSteps is None:

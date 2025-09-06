@@ -9,10 +9,23 @@ from parameter_setup import *
 def run_chain(chain_id):
     # --- Create save directory ---
     if num_chains == 1:
-        saveDir = os.path.join(filedir, "run", modname, runname)
+        if data_type in ["PP", "SS", "joint", "syn"]:
+            saveDir = os.path.join(filedir, "run", modname, runname)
+        elif data_type == "synDL":
+            DLname = f"{DLmod[0]}_{DLmod[1]}_{DLmod[2]}_{DLmod[3]}"
+            saveDir = os.path.join(filedir, "run", modname, DLname, runname)
     else:
-        saveDir = os.path.join(filedir, "run", modname, runname, f"chain_{chain_id}")
+        if data_type in ["PP", "SS", "joint", "syn"]:
+            saveDir = os.path.join(filedir, "run", modname, runname, f"chain_{chain_id}")
+        elif data_type == "synDL":
+            DLname = f"{DLmod[0]}_{DLmod[1]}_{DLmod[2]}_{DLmod[3]}"
+            saveDir = os.path.join(filedir, "run", modname, DLname, runname, f"chain_{chain_id}")
     os.makedirs(saveDir, exist_ok=True)
+
+    # --- Initialize CDinv as None ---
+    CDinv = None
+    CDinv_PP = None
+    CDinv_SS = None
 
     # --- Load data ---
     if data_type in ["PP", "SS", "syn"]:
@@ -23,6 +36,12 @@ def run_chain(chain_id):
         P = data["P"]
         D = data["D"]
         time = data["time"]
+        if useCD:
+            CD = np.loadtxt(os.path.join(datadir, "CD.csv"), delimiter=",")
+            if negOnly:
+                half_len = CD.shape[0] // 2
+                CD = CD[:half_len, :half_len]
+            CDinv = np.linalg.pinv(CD)
     elif data_type == "joint":
         data_PP = np.load(os.path.join(filedir, "data", PPdir, "data.npz"))
         P_PP = data_PP["P"]
@@ -34,9 +53,27 @@ def run_chain(chain_id):
         time_SS = data_SS["time"]
         if len(time_SS) != len(time) or (time_SS[1] - time_SS[0]) != (time[1] - time[0]):
             raise ValueError("Time vector for PP and SS don't match!")
+        if useCD:
+            CD_PP = np.loadtxt(os.path.join(PPdir, "CD.csv"), delimiter=",")
+            CD_SS = np.loadtxt(os.path.join(SSdir, "CD.csv"), delimiter=",")
+            if negOnly:
+                half_len = CD_PP.shape[0] // 2
+                CD_PP = CD_PP[:half_len, :half_len]
+                half_len = CD_SS.shape[0] // 2
+                CD_SS = CD_SS[:half_len, :half_len]
+            CDinv_PP = np.linalg.pinv(CD_PP)
+            CDinv_SS = np.linalg.pinv(CD_SS)
+
+    elif data_type == "synDL":
+        P_tmp = np.loadtxt(os.path.join(filedir, Pfile), delimiter=",", skiprows=1)
+        time = P_tmp[:, 0]
+        P = P_tmp[:, 1]
+        datadir = os.path.join(filedir, "data", syndir)
+        D_tmp = f"data_denoised_l{DLmod[0]}x{DLmod[0]}_s{DLmod[1]}x{DLmod[1]}_layers{DLmod[2]}_ep{DLmod[3]}.csv"
+        D = np.loadtxt(os.path.join(datadir, "DL_denoise", D_tmp), delimiter=",")
 
     # --- Load or create Prior ---
-    if data_type == "syn":
+    if data_type in ["syn", "synDL"]:
         with open(os.path.join(datadir, "prior.pkl"), "rb") as f:
             prior = pickle.load(f)
     else:
@@ -61,10 +98,10 @@ def run_chain(chain_id):
     )
 
     # --- Run RJMCMC ---
-    if data_type in ["PP", "SS", "syn"]:
-        ensemble, _ = rjmcmc_run(P, D, prior, bookkeeping, saveDir)
+    if data_type in ["PP", "SS", "syn", "synDL"]:
+        ensemble, _ = rjmcmc_run(P, D, prior, bookkeeping, saveDir, CDinv=CDinv)
     elif data_type == "joint":
-        ensemble, _ = rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir)
+        ensemble, _ = rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, CDinv_PP=CDinv_PP, CDinv_SS=CDinv_SS)
 
     # --- Save results ---
     with open(os.path.join(saveDir, "ensemble.pkl"), "wb") as f:
