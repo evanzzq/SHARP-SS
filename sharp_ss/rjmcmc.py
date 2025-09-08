@@ -233,8 +233,4 @@ def rjmcmc_run(P, D, prior, bookkeeping, saveDir, CDinv=None):
             with open(os.path.join(saveDir, "progress_log.txt"), "a") as f:
                 f.write(f"[{now}] Step {iStep+1}/{totalSteps}, Elapsed: {elapsed:.2f} sec\n")
 
-    # Save final log-likelihood trace
-    logL_file = os.path.join(saveDir, "logL.txt")
-    np.savetxt(logL_file, logL_trace, fmt="%.8f")
-
     return ensemble, logL_trace

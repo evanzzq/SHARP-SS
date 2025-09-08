@@ -37,13 +37,13 @@ def create_G_from_model(model: Model, prior: Prior):
         start_idx = center_idx + loc - half_w
         end_idx = start_idx + wid
         if 0 <= start_idx < len(G) and end_idx <= len(G):
-            G[start_idx:end_idx] += gauss
+            G[start_idx:end_idx] -= gauss
 
         # Negative arrival (symmetric counterpart)
         start_idx_neg = center_idx - loc - half_w
         end_idx_neg = start_idx_neg + wid
         if 0 <= start_idx_neg < len(G) and end_idx_neg <= len(G):
-            G[start_idx_neg:end_idx_neg] -= gauss
+            G[start_idx_neg:end_idx_neg] += gauss
 
     return G
 
