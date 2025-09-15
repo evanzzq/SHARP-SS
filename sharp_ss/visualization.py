@@ -21,7 +21,8 @@ def plot_G_2dhist(ax, G_array, time, title="Model Ensemble"):
 
     extent = [time[0], time[-1], amp_bins[0], amp_bins[-1]]
     ax.imshow(hist2d, aspect='auto', extent=extent, origin='lower', cmap='hot')
-    ax.plot(time, np.mean(G_array, axis=0), color="cyan", linewidth=0.5, label="Mean")
+    ax.plot(time, np.mean(G_array, axis=0), color="cyan", linestyle=":", linewidth=0.5, label="Mean")
+    ax.set_ylim((-0.2, 0.2))
     ax.set_title(title)
     ax.set_ylabel("Amplitude")
     ax.grid(True, linestyle='--', linewidth=0.4)
@@ -207,7 +208,7 @@ def plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP, npz_SS):
     axs[4].plot(time_PD_SS, D_SS_array.T, color="gray", alpha=0.2, linewidth=0.8)
     axs[4].plot(time_PD_SS, D_SS_mean, color="black", linewidth=1.5, label="Predicted Mean")
     axs[4].plot(time_PD_SS, D_SS, linestyle="--", color="red", linewidth=1.2, label="Observed D")
-    axs[2].set_xlim(tlim)
+    axs[4].set_xlim(tlim)
     axs[4].set_ylabel("Amplitude")
     axs[4].set_xlabel("Time (s)")
     axs[4].grid(True)

@@ -1,7 +1,7 @@
 common:
 
-  filedir: "H:/My Drive/Research/SharpSSPy"
-  # filedir: "/Users/evanzhang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
+  # filedir: "H:/My Drive/Research/SharpSSPy"
+  filedir: "/Users/evanzhang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
   
   useCD: true
   
@@ -18,35 +18,54 @@ common:
   burnInSteps: 800000
   nSaveModels: 100
   actionsPerStep: 2
-  num_chains: 48
+  num_chains: 8
 
 experiments:
-  - event_name: "S1000a_src2s"
+
+  - event_name: "S0976a_src3s"
     data_type: "joint"
-    runname: "run2"
+    runname: "run1"
 
-  - event_name: "S1000a_src2s"
+  - event_name: "S0976a_src3s"
     data_type: "PP"
-    runname: "run2"
+    runname: "run1"
 
-  - event_name: "S1000a_src2s"
+  - event_name: "S0976a_src3s"
     data_type: "SS"
-    runname: "run2"
+    runname: "run1"
 
-  - event_name: "S1000a_src3s"
+  - event_name: "S0976a_src4s"
     data_type: "joint"
-    runname: "run2"
+    runname: "run1"
 
-  - event_name: "S1000a_src3s"
+  - event_name: "S0976a_src4s"
     data_type: "PP"
-    runname: "run2"
+    runname: "run1"
 
-  - event_name: "S1000a_src3s"
+  - event_name: "S0976a_src4s"
     data_type: "SS"
-    runname: "run2"
+    runname: "run1"
 
-  # - event_name: "S2000c_src1s"
-  #   data_type: "synDL"
-  #   runname: "runX"
-  #   Pfile: "misc/ocean_stack.csv"
-  #   DLmod: [16, 8, 5, 5]
+  # - event_name: "S1000a_src2s"
+  #   data_type: "joint"
+  #   runname: "run2"
+
+  # - event_name: "S1000a_src2s"
+  #   data_type: "PP"
+  #   runname: "run2"
+
+  # - event_name: "S1000a_src2s"
+  #   data_type: "SS"
+  #   runname: "run2"
+
+  # - event_name: "S1000a_src3s"
+  #   data_type: "joint"
+  #   runname: "run2"
+
+  # - event_name: "S1000a_src3s"
+  #   data_type: "PP"
+  #   runname: "run2"
+
+  # - event_name: "S1000a_src3s"
+  #   data_type: "SS"
+  #   runname: "run2"

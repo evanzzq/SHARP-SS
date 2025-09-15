@@ -2,6 +2,9 @@ import os, yaml, pickle
 from sharp_ss.visualization import plot_rjmcmc_results, plot_rjmcmc_results_PP_SS_mars
 
 # ==== Config ====
+# filedir = "H:/My Drive/Research/SharpSSPy"
+filedir = "/Users/evanzhang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
+
 yaml_file = "parameter_setup.yaml"
 ensemble_filename = "ensemble.pkl"   # or whatever name you use
 logL_filename = "log_likelihood.txt"
@@ -26,7 +29,6 @@ exp_params = experiments[choice]
 params = {**common, **exp_params}
 
 # ---- Construct directories ----
-filedir = params["filedir"]
 event_name = params["event_name"]
 data_type = params["data_type"]
 runname = params["runname"]
@@ -58,6 +60,8 @@ elif data_type == "joint":
 ensemble_all = []
 if num_chains > 1:
     chain_logLs = []
+    logL_series = {}  # store full series per chain
+
     for i in range(num_chains):
         chain_dir = os.path.join(saveDir, f"chain_{i}")
         logL_file = os.path.join(chain_dir, logL_filename)
@@ -67,18 +71,31 @@ if num_chains > 1:
             lines = f.readlines()
             if len(lines) == 0:
                 continue
-            logL = float(lines[-1].strip())  # last row = final logL
+            logL_vals = [float(x.strip()) for x in lines]
+            logL = logL_vals[-1]  # final logL
         chain_logLs.append((i, logL))
+        logL_series[i] = logL_vals
 
     # Sort chains by final logL (descending)
     chain_logLs.sort(key=lambda x: x[1], reverse=True)
-    
-    # Plot histogram of final logL values
+
+    # --- Plot histogram of final logL values ---
     import matplotlib.pyplot as plt
+    plt.figure(figsize=(6,4))
     plt.hist([x[1] for x in chain_logLs], bins=10, edgecolor="k")
     plt.xlabel("Final log-likelihood")
     plt.ylabel("Number of chains")
     plt.title("Histogram of chain final logL")
+    plt.show()
+
+    # --- Plot full logL vs step for all chains ---
+    plt.figure(figsize=(8,5))
+    for cid, vals in logL_series.items():
+        plt.plot(range(len(vals)), vals, alpha=0.7, linewidth=0.2, color="black")
+    plt.xlabel("Step")
+    plt.ylabel("Log-likelihood")
+    plt.title("Log-likelihood evolution for all chains")
+    plt.grid(True)
     plt.show()
 
     # Ask user for number of top chains
