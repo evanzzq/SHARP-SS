@@ -22,7 +22,7 @@ def plot_G_2dhist(ax, G_array, time, title="Model Ensemble"):
     extent = [time[0], time[-1], amp_bins[0], amp_bins[-1]]
     ax.imshow(hist2d, aspect='auto', extent=extent, origin='lower', cmap='hot')
     ax.plot(time, np.mean(G_array, axis=0), color="cyan", linestyle=":", linewidth=0.5, label="Mean")
-    ax.set_ylim((-0.2, 0.2))
+    ax.set_ylim((amp_min, -amp_min)) # -0.2 to 0.2
     ax.set_title(title)
     ax.set_ylabel("Amplitude")
     ax.grid(True, linestyle='--', linewidth=0.4)
@@ -181,7 +181,7 @@ def plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP, npz_SS):
     D_SS_mean = np.mean(D_SS_array, axis=0)
 
     # --- Plotting ---
-    fig, axs = plt.subplots(5, 1, figsize=(12, 12), sharex=False)
+    fig, axs = plt.subplots(5, 1, figsize=(9, 9), sharex=False) # 12*12 on large display
     tlim = (time[0], time[-1])
 
     # 1. G_PP as 2D histogram

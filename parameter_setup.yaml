@@ -3,69 +3,29 @@ common:
   # filedir: "H:/My Drive/Research/SharpSSPy"
   filedir: "/Users/evanzhang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
   
-  useCD: true
+  useCD: false
   
-  ampRange: [-0.5, 0.5]
+  ampRange: [0, 0.5]
   widRange: [0.1, 2.0]
   
   negOnly: true
   align: false
   
-  maxN: 10
+  maxN: 3
   stdP: 0.1
   
-  totalSteps: 1000000
-  burnInSteps: 800000
-  nSaveModels: 100
-  actionsPerStep: 2
+  totalSteps: 500000
+  burnInSteps: 300000
+  nSaveModels: 200
+  actionsPerStep: 1
   num_chains: 8
 
 experiments:
 
-  - event_name: "S0976a_src3s"
+  - event_name: "S0976a_pzfiltered_src3s"
     data_type: "joint"
-    runname: "run1"
-
-  - event_name: "S0976a_src3s"
-    data_type: "PP"
-    runname: "run1"
-
-  - event_name: "S0976a_src3s"
-    data_type: "SS"
-    runname: "run1"
-
-  - event_name: "S0976a_src4s"
+    runname: "run2_maxN3"
+  
+  - event_name: "S0976a_pzfiltered_src2s"
     data_type: "joint"
-    runname: "run1"
-
-  - event_name: "S0976a_src4s"
-    data_type: "PP"
-    runname: "run1"
-
-  - event_name: "S0976a_src4s"
-    data_type: "SS"
-    runname: "run1"
-
-  # - event_name: "S1000a_src2s"
-  #   data_type: "joint"
-  #   runname: "run2"
-
-  # - event_name: "S1000a_src2s"
-  #   data_type: "PP"
-  #   runname: "run2"
-
-  # - event_name: "S1000a_src2s"
-  #   data_type: "SS"
-  #   runname: "run2"
-
-  # - event_name: "S1000a_src3s"
-  #   data_type: "joint"
-  #   runname: "run2"
-
-  # - event_name: "S1000a_src3s"
-  #   data_type: "PP"
-  #   runname: "run2"
-
-  # - event_name: "S1000a_src3s"
-  #   data_type: "SS"
-  #   runname: "run2"
+    runname: "run2_maxN3"

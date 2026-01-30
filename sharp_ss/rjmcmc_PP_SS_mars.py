@@ -66,6 +66,8 @@ def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None, 
     # Compute log likelihood
     if CDinv_PP is None or CDinv_SS is None:
         logL = -0.5 * np.sum(((Diff_PP + Diff_SS) / sigma) ** 2)
+        sigma_PP, sigma_SS = 0.2, 0.1 ####### TMP FIX!!!!!!!!!!!
+        logL = -0.5 * np.sum((Diff_PP / sigma_PP) ** 2) - 0.5 * np.sum((Diff_SS / sigma_SS) ** 2)
     else:
         logL = -0.5 * (np.trace(Diff_PP.T @ CDinv_PP @ Diff_PP) + np.trace(Diff_SS.T @ CDinv_SS @ Diff_SS))
 

@@ -1,8 +1,8 @@
 # ---- Parameter setup ----
-filedir = "H:\My Drive\Research\SharpSSPy"
-# filedir = "/Users/evanzhang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
+filedir = "H:\My Drive\Res÷earch\SharpSSPy"
+# filedir = "/Users/evanzh÷ang/zzq@umd.edu - Google Drive/My Drive/Research/SharpSSPy"
 
-event_name = "S1000a_src2s"
+event_name = "S0976a_src3s"
 data_type = "joint" # "PP", "SS", "joint", "syn", "synDL"
 useCD = True
 
