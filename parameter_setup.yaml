@@ -5,27 +5,27 @@ common:
   
   useCD: false
   
-  ampRange: [0, 0.5]
+  ampRange: [0.1, 0.5]
   widRange: [0.1, 2.0]
   
   negOnly: true
   align: false
   
-  maxN: 3
+  maxN: 1
   stdP: 0.1
   
-  totalSteps: 500000
-  burnInSteps: 300000
+  totalSteps: 1000000
+  burnInSteps: 800000
   nSaveModels: 200
   actionsPerStep: 1
   num_chains: 8
 
 experiments:
 
-  - event_name: "S0976a_pzfiltered_src3s"
+  - event_name: "S0976asdr_1877_src4.0s"
     data_type: "joint"
-    runname: "run2_maxN3"
-  
-  - event_name: "S0976a_pzfiltered_src2s"
+    runname: "run1_maxN3_minamp0.1"
+
+  - event_name: "S0976asdr_1877_src4.0s"
     data_type: "joint"
-    runname: "run2_maxN3"
+    runname: "run1_maxN10_minamp0.1"

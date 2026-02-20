@@ -198,7 +198,7 @@ def plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP, npz_SS):
     axs[2].set_xlim(tlim)
     axs[2].set_ylabel("Amplitude")
     axs[2].grid(True)
-    axs[2].legend()
+    axs[2].legend(loc='lower right')
 
     # 4. G_SS as 2D histogram
     plot_G_2dhist(axs[3], G_SS_array, time, "SS: Ensemble of G Models (2D Histogram)")
@@ -212,7 +212,7 @@ def plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP, npz_SS):
     axs[4].set_ylabel("Amplitude")
     axs[4].set_xlabel("Time (s)")
     axs[4].grid(True)
-    axs[4].legend()
+    axs[4].legend(loc='lower right')
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
