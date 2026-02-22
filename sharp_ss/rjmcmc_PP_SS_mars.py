@@ -31,7 +31,7 @@ def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None, 
     # S0976a
     # Li2022: 0.08181493934, 0.1712366396
     # Syn TauP SS @1877: 0.0862, 0.1375
-    # Syn TauP SS @1883: 0.0862, 0.1662/0.1715/0.1723 (0.1700 avg)
+    # Syn TauP SS @1883: 0.0862, 0.1662/0.1715/0.1723
     # Syn TauP SS @1888: 0.0862, 0.1527
     rayp_PP, rayp_SS = 0.0862, 0.1527
     
