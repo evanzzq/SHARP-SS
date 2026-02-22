@@ -42,8 +42,10 @@ def calc_like_prob(P, D, model, prior, sigma=None, CDinv=None):
     
     # Compute log likelihood
     if CDinv is None:
+        sigma *= np.exp(0.5 * model.loge)
         logL = -0.5 * np.sum((Diff / sigma) ** 2)
     else:
+        CDinv *= np.exp(-model.loge)
         logL = -0.5 * np.trace(Diff.T @ CDinv @ Diff)
 
     return logL
@@ -141,26 +143,6 @@ def update_wid(model, prior):
         if np.any(dist < np.maximum(prior.minSpace, overlap_thresh)):
             return model, False
     # Success
-    return model_new, True
-
-def update_sig(model, prior):
-    # Copy model
-    model_new = copy.deepcopy(model)
-    # Update
-    eps = np.finfo(float).eps
-    model_new.sig = np.maximum(eps, model_new.sig + prior.sigStd * np.random.randn() * prior.stdP)
-    # Return
-    return model_new, True
-
-def update_nc(model, prior):
-    # Copy model
-    model_new = copy.deepcopy(model)
-    # Update
-    eps = np.finfo(float).eps
-    model_new.nc1 += prior.nc1Std * np.random.randn()
-    model_new.nc1 = np.clip(model_new.nc1, eps, 1)
-    model_new.nc2 += prior.nc2Std * np.random.randn()
-    # Return
     return model_new, True
 
 def rjmcmc_run(P, D, prior, bookkeeping, saveDir, CDinv=None):

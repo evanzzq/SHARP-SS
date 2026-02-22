@@ -1,5 +1,5 @@
 import os, yaml, pickle
-from sharp_ss.visualization import plot_rjmcmc_results, plot_rjmcmc_results_PP_SS_mars
+from sharp_ss.visualization import plot_rjmcmc_results, plot_rjmcmc_results_PP_SS_mars, plot_loge_histograms
 
 # ==== Config ====
 # filedir = "H:/My Drive/Research/SharpSSPy"
@@ -92,6 +92,7 @@ if num_chains > 1:
     plt.figure(figsize=(8,5))
     for cid, vals in logL_series.items():
         plt.plot(range(len(vals)), vals, alpha=0.7, linewidth=0.2, color="black")
+    plt.xscale('log')
     plt.xlabel("Step")
     plt.ylabel("Log-likelihood")
     plt.title("Log-likelihood evolution for all chains")
@@ -128,3 +129,5 @@ if data_type in ["PP", "SS", "syn"]:
     plot_rjmcmc_results(ensemble_all, prior, npz_filename=npz_file)
 elif data_type == "joint":
     plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP=npz_PP, npz_SS=npz_SS)
+
+plot_loge_histograms(ensemble_all, bins=40)

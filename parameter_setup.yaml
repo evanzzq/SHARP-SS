@@ -7,12 +7,15 @@ common:
   
   ampRange: [0.1, 0.5]
   widRange: [0.1, 2.0]
+  rhoRange: [1.5, 2.2]
+  logeRange: [0., 10.]
   
   negOnly: true
   align: false
   
-  maxN: 1
-  stdP: 0.1
+  maxN: 3
+  std1: 0.02
+  std2: 0.02
   
   totalSteps: 1000000
   burnInSteps: 800000
@@ -22,10 +25,22 @@ common:
 
 experiments:
 
-  - event_name: "S0976asdr_1877_src4.0s"
+  - event_name: "S0976asdr_1888_src2.0s"
     data_type: "joint"
     runname: "run1_maxN3_minamp0.1"
 
-  - event_name: "S0976asdr_1877_src4.0s"
+  - event_name: "S0976asdr_1888_src2.5s"
     data_type: "joint"
-    runname: "run1_maxN10_minamp0.1"
+    runname: "run1_maxN3_minamp0.1"
+  
+  - event_name: "S0976asdr_1888_src3.0s"
+    data_type: "joint"
+    runname: "run1_maxN3_minamp0.1"
+
+  - event_name: "S0976asdr_1888_src3.5s"
+    data_type: "joint"
+    runname: "run1_maxN3_minamp0.1"
+  
+  - event_name: "S0976asdr_1888_src4.0s"
+    data_type: "joint"
+    runname: "run1_maxN3_minamp0.1"

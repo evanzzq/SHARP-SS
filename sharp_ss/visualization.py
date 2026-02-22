@@ -122,6 +122,10 @@ def plot_rho_distribution(ax, ensemble, tlim):
 
     # Plot
     ax.pcolormesh(xi, yi, zi, shading='auto', cmap='hot')
+
+    # tmp true model
+    true_model = np.asarray([[4.973, 2.054], [10.708, 1.607], [17.222, 1.659]])
+    ax.scatter(-true_model[:, 0], true_model[:, 1], c="cyan", s=60, marker="x", linewidths=2)
     ax.set_xlabel("PP time (s)")
     ax.set_ylabel("vp/vs")
     ax.set_title("vp/vs distribution")
@@ -158,10 +162,10 @@ def plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP, npz_SS):
 
     for model in ensemble_all:       
         # PP
-        model_PP = Model(Nphase=model.Nphase, loc=model.locPP, amp=model.ampPP, wid=model.widPP)
+        model_PP = Model(Nphase=model.Nphase, loc=model.locPP, amp=model.ampPP, wid=model.widPP, loge=0.)
         G_PP = create_G_from_model(model_PP, prior)
         # SS
-        model_SS = Model(Nphase=model.Nphase, loc=model.locPP*model.rho, amp=model.ampSS, wid=model.widSS)
+        model_SS = Model(Nphase=model.Nphase, loc=model.locPP*model.rho, amp=model.ampSS, wid=model.widSS, loge=0.)
         G_SS = create_G_from_model(model_SS, prior)
         # Append
         G_PP_list.append(G_PP)
@@ -216,3 +220,55 @@ def plot_rjmcmc_results_PP_SS_mars(ensemble_all, prior, npz_PP, npz_SS):
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
+
+def plot_loge_histograms(
+    ensemble,
+    bins=40,
+    figsize=(10, 4),
+    edgecolor="k",
+    show=True,
+):
+    """
+    Plot histograms of model.loge1 and model.loge2 from an RJMCMC ensemble.
+
+    Args:
+        ensemble: iterable of model objects (each may have .loge1 and .loge2 floats)
+        bins: histogram bins (int or sequence)
+        figsize: matplotlib figure size
+        edgecolor: matplotlib hist edgecolor
+        show: whether to call plt.show()
+
+    Returns:
+        (fig, (ax1, ax2), (loge1_vals, loge2_vals))
+    """
+    loge1_vals, loge2_vals = [], []
+
+    for m in ensemble:
+        v1 = getattr(m, "loge1", None)
+        v2 = getattr(m, "loge2", None)
+
+        if v1 is not None and np.isfinite(v1):
+            loge1_vals.append(float(v1))
+        if v2 is not None and np.isfinite(v2):
+            loge2_vals.append(float(v2))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    if len(loge1_vals) > 0:
+        ax1.hist(loge1_vals, bins=bins, edgecolor=edgecolor)
+    ax1.set_xlabel("model.loge1")
+    ax1.set_ylabel("Count")
+    ax1.set_title("Histogram of loge1")
+
+    if len(loge2_vals) > 0:
+        ax2.hist(loge2_vals, bins=bins, edgecolor=edgecolor)
+    ax2.set_xlabel("model.loge2")
+    ax2.set_ylabel("Count")
+    ax2.set_title("Histogram of loge2")
+
+    fig.tight_layout()
+
+    if show:
+        plt.show()
+
+    return fig, (ax1, ax2), (loge1_vals, loge2_vals)

@@ -18,19 +18,25 @@ def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None, 
     Returns:
         logL
     """
-    if sigma is None: sigma = prior.stdP
 
     # Forward calculation: D = P * G
     # PP
-    model_PP = Model(Nphase=model.Nphase, loc=model.locPP, amp=model.ampPP, wid=model.widPP)
+    model_PP = Model(Nphase=model.Nphase, loc=model.locPP, amp=model.ampPP, wid=model.widPP, loge=0.)
     G_PP = create_G_from_model(model_PP, prior)
     D_PP_model = convolve_P_G(P_PP, G_PP)
     # SS
     #### temp: hard-coded rayp and vs ####
     vs = 3.5 # km/s
-    rayp_PP, rayp_SS = 0.08181493934, 0.1712366396 # S0976a
+
+    # S0976a
+    # Li2022: 0.08181493934, 0.1712366396
+    # Syn TauP SS @1877: 0.0862, 0.1375
+    # Syn TauP SS @1883: 0.0862, 0.1662/0.1715/0.1723 (0.1700 avg)
+    # Syn TauP SS @1888: 0.0862, 0.1527
+    rayp_PP, rayp_SS = 0.0862, 0.1527
+    
     loc_SS = model.locPP * model.rho * np.sqrt(1 - (rayp_PP * vs * model.rho)**2) / np.sqrt(1 - (rayp_SS * vs)**2)
-    model_SS = Model(Nphase=model.Nphase, loc=loc_SS, amp=model.ampSS, wid=model.widSS)
+    model_SS = Model(Nphase=model.Nphase, loc=loc_SS, amp=model.ampSS, wid=model.widSS, loge=0.)
     G_SS = create_G_from_model(model_SS, prior)
     D_SS_model = convolve_P_G(P_SS, G_SS)
 
@@ -69,10 +75,10 @@ def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None, 
     
     # Compute log likelihood
     if CDinv_PP is None or CDinv_SS is None:
-        logL = -0.5 * np.sum(((Diff_PP + Diff_SS) / sigma) ** 2)
-        sigma_PP, sigma_SS = 0.2, 0.1 ####### TMP FIX!!!!!!!!!!!
+        sigma_PP, sigma_SS = prior.std1 * np.exp(0.5 * model.loge1), prior.std2 * np.exp(0.5 * model.loge2)
         logL = -0.5 * np.sum((Diff_PP / sigma_PP) ** 2) - 0.5 * np.sum((Diff_SS / sigma_SS) ** 2)
     else:
+        CDinv_PP, CDinv_SS = CDinv_PP * np.exp(-model.loge1), CDinv_SS * np.exp(-model.loge2)
         logL = -0.5 * (np.trace(Diff_PP.T @ CDinv_PP @ Diff_PP) + np.trace(Diff_SS.T @ CDinv_SS @ Diff_SS))
 
     return logL
@@ -240,6 +246,26 @@ def update_rho(model, prior):
     # Success, return
     return model_new, True
 
+def update_loge1(model, prior):
+    # Copy model
+    model_new = copy.deepcopy(model)
+    # Update
+    model_new.loge1 += prior.logeStd * np.random.randn()
+    # Check range and return
+    if prior.logeRange[0] <= model_new.loge1 <= prior.logeRange[1]:
+        return model_new, True
+    return model, False
+
+def update_loge2(model, prior):
+    # Copy model
+    model_new = copy.deepcopy(model)
+    # Update
+    model_new.loge2 += prior.logeStd * np.random.randn()
+    # Check range and return
+    if prior.logeRange[0] <= model_new.loge2 <= prior.logeRange[1]:
+        return model_new, True
+    return model, False
+
 def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, CDinv_PP=None, CDinv_SS=None):
     
     totalSteps = bookkeeping.totalSteps
@@ -247,6 +273,9 @@ def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, C
     nSaveModels = bookkeeping.nSaveModels
     save_interval = (totalSteps - burnInSteps) // nSaveModels
     actionsPerStep = bookkeeping.actionsPerStep
+
+    n_len = P_PP.shape[0]
+    if prior.negOnly: n_len //= 2
 
     # Start from an empty model
     model = Model2.create_empty()
@@ -264,7 +293,7 @@ def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, C
 
     for iStep in range(totalSteps):
 
-        actions = np.random.choice(7, size=actionsPerStep)
+        actions = np.random.choice(10, size=actionsPerStep)
         model_new = model
 
         for action in actions:
@@ -284,6 +313,10 @@ def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, C
                 model_new, _ = update_widSS(model_new, prior)
             elif action == 7:
                 model_new, _ = update_rho(model_new, prior)
+            elif action == 8:
+                model_new, _ = update_loge1(model_new, prior)
+            elif action == 9:
+                model_new, _ = update_loge2(model_new, prior)
 
         # Compute likelihood
         new_logL = calc_like_prob_PP_SS_mars(
@@ -291,7 +324,7 @@ def rjmcmc_run_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, prior, bookkeeping, saveDir, C
             )
 
         # Acceptance probability
-        log_accept_ratio = new_logL - logL
+        log_accept_ratio = (new_logL - logL) + n_len * ((model.loge1 - model_new.loge1) + (model.loge2 - model_new.loge2))
 
         if np.log(np.random.rand()) < log_accept_ratio:
             model = model_new

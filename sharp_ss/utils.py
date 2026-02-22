@@ -161,10 +161,12 @@ def prepare_experiment(exp_vars):
         dt = time[1] - time[0]
         tlen = (len(time) // 2) * dt
         prior = Prior(
-            stdP=exp_vars["stdP"], maxN=exp_vars["maxN"],
+            std1=exp_vars["std1"], std2=exp_vars["std2"], maxN=exp_vars["maxN"],
             tlen=tlen, dt=dt,
             ampRange=tuple(exp_vars["ampRange"]),
             widRange=tuple(exp_vars["widRange"]),
+            logeRange=tuple(exp_vars["logeRange"]),
+            rhoRange=tuple(exp_vars["rhoRange"]),
             negOnly=exp_vars["negOnly"], align=exp_vars["align"]
         )
         sharedDir = os.path.join(filedir, "run", exp_vars["modname"], runname)
