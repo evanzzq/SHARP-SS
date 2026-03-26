@@ -124,8 +124,8 @@ def plot_rho_distribution(ax, ensemble, tlim):
     ax.pcolormesh(xi, yi, zi, shading='auto', cmap='hot')
 
     # tmp true model
-    true_model = np.asarray([[4.973, 2.054], [10.708, 1.607], [17.222, 1.659]])
-    ax.scatter(-true_model[:, 0], true_model[:, 1], c="cyan", s=60, marker="x", linewidths=2)
+    # true_model = np.asarray([[4.973, 2.054], [10.708, 1.607], [17.222, 1.659]])
+    # ax.scatter(-true_model[:, 0], true_model[:, 1], c="cyan", s=60, marker="x", linewidths=2)
     ax.set_xlabel("PP time (s)")
     ax.set_ylabel("vp/vs")
     ax.set_title("vp/vs distribution")

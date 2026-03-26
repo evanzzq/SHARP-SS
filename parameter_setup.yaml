@@ -25,22 +25,47 @@ common:
 
 experiments:
 
-  - event_name: "S0976asdr_1888_src2.0s"
+  - event_name: "S0976a_pzfiltered_src2.0s"
     data_type: "joint"
     runname: "run1_maxN3_minamp0.1"
 
-  - event_name: "S0976asdr_1888_src2.5s"
-    data_type: "joint"
-    runname: "run1_maxN3_minamp0.1"
-  
-  - event_name: "S0976asdr_1888_src3.0s"
+  - event_name: "S0976a_pzfiltered_src2.5s"
     data_type: "joint"
     runname: "run1_maxN3_minamp0.1"
 
-  - event_name: "S0976asdr_1888_src3.5s"
+  - event_name: "S0976a_pzfiltered_src3.0s"
     data_type: "joint"
     runname: "run1_maxN3_minamp0.1"
-  
-  - event_name: "S0976asdr_1888_src4.0s"
+
+  - event_name: "S0976a_pzfiltered_src3.5s"
     data_type: "joint"
     runname: "run1_maxN3_minamp0.1"
+
+  - event_name: "S0976a_pzfiltered_src4.0s"
+    data_type: "joint"
+    runname: "run1_maxN3_minamp0.1"
+
+  - event_name: "S0976a_pzfiltered_src2.0s"
+    data_type: "joint"
+    maxN: 10
+    runname: "run1_maxN10_minamp0.1"
+
+  - event_name: "S0976a_pzfiltered_src2.5s"
+    data_type: "joint"
+    maxN: 10
+    runname: "run1_maxN10_minamp0.1"
+
+  - event_name: "S0976a_pzfiltered_src3.0s"
+    data_type: "joint"
+    maxN: 10
+    runname: "run1_maxN10_minamp0.1"
+
+  - event_name: "S0976a_pzfiltered_src3.5s"
+    data_type: "joint"
+    maxN: 10
+    runname: "run1_maxN10_minamp0.1"
+
+  - event_name: "S0976a_pzfiltered_src4.0s"
+    data_type: "joint"
+    maxN: 10
+    runname: "run1_maxN10_minamp0.1"

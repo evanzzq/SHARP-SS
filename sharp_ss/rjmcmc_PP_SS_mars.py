@@ -35,7 +35,7 @@ def calc_like_prob_PP_SS_mars(P_PP, P_SS, D_PP, D_SS, model, prior, sigma=None, 
     # Syn TauP SS @1888: 0.0862, 0.1527
     rayp_PP, rayp_SS = 0.0862, 0.1527
     
-    loc_SS = model.locPP * model.rho * np.sqrt(1 - (rayp_PP * vs * model.rho)**2) / np.sqrt(1 - (rayp_SS * vs)**2)
+    loc_SS = model.locPP * model.rho * np.sqrt(1 - (rayp_SS * vs)**2) / np.sqrt(1 - (rayp_PP * vs * model.rho)**2)
     model_SS = Model(Nphase=model.Nphase, loc=loc_SS, amp=model.ampSS, wid=model.widSS, loge=0.)
     G_SS = create_G_from_model(model_SS, prior)
     D_SS_model = convolve_P_G(P_SS, G_SS)
